@@ -1,0 +1,16 @@
+package com.vega.cinema.back.dto;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@RequiredArgsConstructor
+public class ReservationGetDto {
+
+    private Long id;
+    private Integer row;
+    private String userEmail;
+    private Long screeningId;
+}

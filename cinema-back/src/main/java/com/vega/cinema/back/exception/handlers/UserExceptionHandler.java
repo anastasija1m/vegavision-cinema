@@ -1,7 +1,6 @@
 package com.vega.cinema.back.exception.handlers;
 
-import com.vega.cinema.back.exception.EmailExistsException;
-import com.vega.cinema.back.exception.UsernameExistsException;
+import com.vega.cinema.back.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -21,5 +20,23 @@ public class UserExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<String> handleEmailExistsException(EmailExistsException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(AccountNotConfirmedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleAccountNotConfirmedException(AccountNotConfirmedException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(IncorrectPasswordException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleIncorrectPasswordException(IncorrectPasswordException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleInvalidTokenException(InvalidTokenException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 }

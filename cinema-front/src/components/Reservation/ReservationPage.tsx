@@ -53,7 +53,7 @@ const SeatStyled = styled.div`
   background-color: ${({ color }) => color};
 
   &:hover {
-    background-color: ${({ onClick }) => (onClick ? "orange" : "red")};
+    background-color: ${({ onClick }) => (onClick ? "#FFBE98" : "red")};
   }
 
   span {
@@ -133,7 +133,7 @@ export default function ReservationPage({ isLoggedIn, showSnackbar }: Reservatio
   const fetchReservedSeats = async () => {
     try {
       if (screeningId) {
-        const response = await reservationService.getAllReservedSeatsForScreening(parseInt(screeningId));
+        const response = await ReservationService.getAllReservedSeatsForScreening(parseInt(screeningId));
         setReservedSeats(response);
       }
     } catch (error) {
@@ -165,7 +165,7 @@ export default function ReservationPage({ isLoggedIn, showSnackbar }: Reservatio
         const isReserved = reservedSeats.some((seat) => seat.seatRow === row && seat.seatColumn === col);
         const isSelected = selectedSeats.some((seat) => seat.row === row && seat.col === col);
 
-        const seatColor = isReserved ? "red" : isSelected ? "orange" : "green";
+        const seatColor = isReserved ? "#D24545" : isSelected ? "#FFBE98" : "#96C291";
         const seatClickHandler = isReserved ? undefined : () => handleSeatClick(row, col);
 
         const seatNumber = (row - 1) * movieScreening.columns + col;
@@ -224,7 +224,7 @@ export default function ReservationPage({ isLoggedIn, showSnackbar }: Reservatio
           totalPrice: selectedSeats.length * movieScreening.ticketPrice,
           reservedSeats: selectedSeats.map(seat => ({ seatRow: seat.row, seatColumn: seat.col }))
         };
-        await reservationService.reserve(reservationData);
+        await ReservationService.reserve(reservationData);
         setSelectedSeats([]);
         fetchReservedSeats();
         showSnackbar("You have successfully reserved tickets. Check your email for reservation information.");

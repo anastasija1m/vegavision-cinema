@@ -80,6 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.contains("api/movie-screenings/get-all-filtered") ||
                 path.contains("api/movies/fetch-by-ids") ||
                 path.endsWith("api/reservations") ||
+                path.contains("api/reservations") ||
                 (path.endsWith("/api/genres") && method.equals("GET")) ||
                 (path.contains("/api/movie-screenings") && method.equals("GET")) ||
                 (path.contains("/api/reservations") && method.equals("GET"));

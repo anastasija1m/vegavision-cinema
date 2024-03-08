@@ -43,4 +43,9 @@ export class UserService {
   static async changePasswordViaEmail(passwordChangeData: PasswordChangeViaEmail): Promise<any> {
     return this.apiService.post(`${environment.apiHost}/users/change-password`, passwordChangeData);
   }
+
+  static async confirmAccount(token: string): Promise<any> {
+    const response = await this.apiService.get(`${environment.apiHost}/user-management/confirm-account?token=${token}`);
+    return response;
+  }
 }

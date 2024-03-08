@@ -37,6 +37,9 @@ public class Reservation {
     @Column(name = "is_cancelled", nullable = false)
     private Boolean isCancelled;
 
+    @Column(name = "discount_percent")
+    private Integer discountPercent;
+
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<ReservedSeat> reservedSeats;

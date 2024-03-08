@@ -40,23 +40,12 @@ public class UserManagementController {
         try {
             UserRegistrationDto confirmedUser = userService.confirmRegistration(token);
             if (confirmedUser != null) {
-                return loadHtmlFile("confirmation.html");
+                return ResponseEntity.ok("success");
             } else {
-                return loadHtmlFile("error.html");
+                return ResponseEntity.ok("error");
             }
         } catch (TokenExpiredException e) {
-            return loadHtmlFile("error.html");
-        }
-    }
-
-    private ResponseEntity<String> loadHtmlFile(String filename) {
-        Resource resource = new ClassPathResource("/static/" + filename);
-        try (InputStream inputStream = resource.getInputStream()) {
-            byte[] data = inputStream.readAllBytes();
-            String htmlContent = new String(data);
-            return ResponseEntity.ok(htmlContent);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error reading HTML page: " + filename);
+            return ResponseEntity.ok("error");
         }
     }
 }

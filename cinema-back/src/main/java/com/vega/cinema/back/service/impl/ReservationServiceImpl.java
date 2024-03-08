@@ -1,32 +1,28 @@
 package com.vega.cinema.back.service.impl;
 
-import com.vega.cinema.back.dto.ReservationCreateDto;
-import com.vega.cinema.back.dto.SeatDto;
+import com.vega.cinema.back.dto.*;
 import com.vega.cinema.back.exception.QRCodeGenerationException;
+import com.vega.cinema.back.exception.ReservationAlreadyCancelledException;
+import com.vega.cinema.back.exception.ScreeningAlreadyPassedException;
 import com.vega.cinema.back.exception.SeatAlreadyReservedException;
 import com.vega.cinema.back.exception.handlers.EmailNotSentException;
-import com.vega.cinema.back.model.MovieScreening;
-import com.vega.cinema.back.model.Reservation;
-import com.vega.cinema.back.model.ReservedSeat;
-import com.vega.cinema.back.model.User;
-import com.vega.cinema.back.repository.MovieScreeningRepository;
-import com.vega.cinema.back.repository.ReservationRepository;
-import com.vega.cinema.back.repository.UserRepository;
+import com.vega.cinema.back.model.*;
+import com.vega.cinema.back.repository.*;
 import com.vega.cinema.back.service.ReservationService;
-import com.vega.cinema.back.util.EmailSender;
-import com.vega.cinema.back.util.Mapper;
-import com.vega.cinema.back.util.QRCodeGenerator;
+import com.vega.cinema.back.util.*;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -43,6 +39,11 @@ public class ReservationServiceImpl implements ReservationService {
     public ReservationCreateDto reserve(ReservationCreateDto reservationCreateDto) {
         MovieScreening movieScreening = movieScreeningRepository.findById(reservationCreateDto.getScreeningId())
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Movie screening with id %d not found", reservationCreateDto.getScreeningId())));
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        if (movieScreening.getScreeningDate().isBefore(currentDateTime)) {
+            throw new ScreeningAlreadyPassedException("Movie screening has already passed");
+        }
 
         for (SeatDto seatDto : reservationCreateDto.getReservedSeats()) {
             if (reservationRepository.existsByReservedSeat(
@@ -65,16 +66,15 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Async
     public void sendEmailWithQRCode(String email, byte[] qrCodeByteArray) {
-        if (qrCodeByteArray != null) {
-            String registrationSubject = "Details about your reservation.";
-            String registrationMessage = "Scan the QR code to be able to see details about your reservation.";
-            try {
-                emailSender.sendEmailWithAttachment(email, registrationSubject, registrationMessage, qrCodeByteArray, "reservation_qr_code.png");
-            } catch (MessagingException e) {
-                throw new EmailNotSentException("Error sending email with attachment" + e);
-            }
-        } else {
+        if(qrCodeByteArray == null)
             throw new QRCodeGenerationException("Failed to generate QR code for reservation.");
+
+        String registrationSubject = "Details about your reservation.";
+        String registrationMessage = "Scan the QR code to be able to see details about your reservation.";
+        try {
+            emailSender.sendEmailWithAttachment(email, registrationSubject, registrationMessage, qrCodeByteArray, "reservation_qr_code.png");
+        } catch (MessagingException e) {
+            throw new EmailNotSentException("Error sending email with attachment" + e);
         }
     }
 
@@ -84,7 +84,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         double totalPrice = movieScreening.getTicketPrice() * reservationCreateDto.getReservedSeats().size();
         if(user.isPresent())
-            totalPrice *= 0.95;
+            reservation.setDiscountPercent(5);
 
         reservation.setTotalPrice(totalPrice);
         reservation.setUserEmail(reservationCreateDto.getUserEmail());
@@ -106,7 +106,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public List<ReservedSeat> getAllReservedSeatsForScreening(Long screeningId) {
+    public List<SeatDto> getAllReservedSeatsForScreening(Long screeningId) {
         List<Reservation> reservations = reservationRepository.findReservationsByScreeningId(screeningId);
 
         List<ReservedSeat> reservedSeats = new ArrayList<>();
@@ -114,6 +114,48 @@ public class ReservationServiceImpl implements ReservationService {
             reservedSeats.addAll(reservation.getReservedSeats());
         }
 
-        return reservedSeats;
+        return mapper.mapList(reservedSeats, SeatDto.class);
+    }
+
+    @Override
+    public Page<MyReservationsGetDto> findAllForUserPaged(Long userId, Pageable pageable, String type) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User with id " + userId + " not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        Page<Object[]> reservationsPage = reservationRepository.findAllForUserPagedWithMovieAndScreening(user.getEmail(), now, type, pageable);
+
+        List<MyReservationsGetDto> reservationDtos = reservationsPage.getContent().stream()
+                .map(result -> {
+                    Reservation reservation = (Reservation) result[0];
+                    MovieScreening movieScreening = (MovieScreening) result[1];
+                    Movie movie = (Movie) result[2];
+
+                    MyReservationsGetDto reservationDto = mapper.map(reservation, MyReservationsGetDto.class);
+                    ScreeningReservationGetDto screeningDto = mapper.map(movieScreening, ScreeningReservationGetDto.class);
+                    MovieGetDto movieDto = mapper.map(movie, MovieGetDto.class);
+
+                    screeningDto.setMovieGetDto(movieDto);
+                    reservationDto.setMovieScreeningGetDto(screeningDto);
+
+                    return reservationDto;
+                })
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(reservationDtos, pageable, reservationsPage.getTotalElements());
+    }
+
+    @Override
+    public ReservationGetDto cancel(Long id) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Reservation with id %s not found", id)));
+
+        if(reservation.getIsCancelled())
+            throw new ReservationAlreadyCancelledException(String.format("Reservation with id %s already cancelled", id));
+
+        reservation.setIsCancelled(true);
+        reservationRepository.save(reservation);
+
+        return mapper.map(reservation, ReservationGetDto.class);
     }
 }

@@ -12,7 +12,7 @@ public class GenreExceptionHandler {
 
     @ExceptionHandler(GenreExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ResponseEntity<String> handleGenreNotFound(GenreExistsException e) {
+    public ResponseEntity<String> handleGenreExistsException(GenreExistsException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 }

@@ -84,7 +84,6 @@ public class UserServiceImpl implements UserService {
 
         user.setEnabled(true);
         userRepository.save(user);
-
         confirmationTokenRepository.delete(registrationConfirmationToken);
 
         return mapper.map(user, UserRegistrationDto.class);
@@ -134,6 +133,9 @@ public class UserServiceImpl implements UserService {
     public void resetPasswordByUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
+
+        if (!user.isEnabled())
+            throw new AccountNotConfirmedException("You have not enabled your account yet.");
 
         PasswordResetToken passwordResetToken = new PasswordResetToken(user);
         passwordResetTokenRepository.save(passwordResetToken);
@@ -201,7 +203,7 @@ public class UserServiceImpl implements UserService {
         RegistrationConfirmationToken token = new RegistrationConfirmationToken(user);
         confirmationTokenRepository.save(token);
 
-        String confirmationLink = "http://localhost:8080/api/user-management/confirm-account?token=" + token.getToken();
+        String confirmationLink = "http://localhost:3000/confirm-account?token=" + token.getToken();
         String registrationSubject = "Complete your registration!";
         String registrationMessage = "To be able to log into your account, please click on the following link: " + confirmationLink;
 

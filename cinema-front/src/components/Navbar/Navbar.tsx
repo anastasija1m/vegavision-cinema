@@ -21,6 +21,9 @@ const NavbarStyled = styled.nav`
   padding: 10px 20px;
   background-color: #12372A;
   color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 `;
 
 const NavbarLinks = styled.div`
@@ -78,6 +81,12 @@ export default function Navbar({ openModal, closeModal, showSnackbar, userRole, 
             <LinkStyled to="/users">Users</LinkStyled>
             <LinkStyled to="/movie-screenings">Movie Screenings</LinkStyled>
           </>
+        }
+        {userRole === 'ADMIN' &&
+          <LinkStyled to="/my-reservations">My Reservations</LinkStyled>
+        }
+        {userRole === 'USER' &&
+          <LinkStyled to="/my-reservations">My Reservations</LinkStyled>
         }
       </NavbarLinks>
       <ButtonsContainerStyled>

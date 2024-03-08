@@ -16,6 +16,9 @@ import { User } from './models/User';
 import MovieScreeningsPage from './components/MovieScreenings/MovieScreeningsPage';
 import HomePage from './components/Home/HomePage';
 import ReservationPage from './components/Reservation/ReservationPage';
+import MyReservationsPage from './components/Reservation/MyReservationsPage';
+import AccountConfirmation from './components/AccountConfirmation/AccountConfirmation';
+import ConfirmationPage from './components/AccountConfirmation/ConfirmAccountPage';
 
 export default function App() {
   const [modal, setModal] = useState<React.ReactNode>();
@@ -23,7 +26,7 @@ export default function App() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<string>('');
-
+  const [userId, setUserId] = useState<number>();
   const openModal = (element: React.ReactNode) => {
     setModal(element);
   }
@@ -65,6 +68,7 @@ export default function App() {
       setIsLoggedIn(true);
       const decodedToken = decodeToken(accessToken) as User;
       setUserRole(decodedToken.role);
+      setUserId(decodedToken.id);
     }
   }, []);
 
@@ -80,6 +84,9 @@ export default function App() {
         <Route path='user-profile' element={<UserProfilePage showSnackbar={showSnackbar} />} />
         <Route path='movie-screenings' element={<MovieScreeningsPage openModal={openModal} closeModal={closeModal} userRole={userRole} showSnackbar={showSnackbar} />} />
         <Route path='reservation/:screeningId' element={<ReservationPage isLoggedIn={isLoggedIn} showSnackbar={showSnackbar} />} />
+        <Route path='my-reservations' element={<MyReservationsPage showSnackbar={showSnackbar} /> }/>
+        <Route path='account-successfully-confirmed' element={<AccountConfirmation /> } />
+        <Route path='confirm-account' element={<ConfirmationPage />} />
       </Routes>
       {
         modal && <Modal>{modal}</Modal>

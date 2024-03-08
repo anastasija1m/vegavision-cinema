@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class ReservationGetDto {
+public class MyReservationsGetDto {
 
     private Long id;
     private String userEmail;
@@ -19,4 +19,5 @@ public class ReservationGetDto {
     private String code;
     private List<SeatDto> reservedSeats;
     private boolean isCancelled;
+    private ScreeningReservationGetDto movieScreeningGetDto;
 }
